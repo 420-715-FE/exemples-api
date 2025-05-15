@@ -66,7 +66,7 @@ $method = $_SERVER["REQUEST_METHOD"];
 
 // Récupère le corps de la requête (s'il y a lieu)
 $jsonBody = file_get_contents("php://input");
-$body = json_decode($jsonBody, true);
+$body = json_decode($jsonBody, true); // Convertit le JSON en tableau PHP (associatif ou non)
 
 switch ($method) {
     case "GET":
