@@ -13,8 +13,8 @@
 */
 const BASE_URL = "/exemples-api/exemple-api-02/";
 
-include_once "db.php";
-include_once "contactsModel.php";
+require_once("db.php");
+require_once("contactsModel.php");
 
 $model = new ContactModel($db);
 
