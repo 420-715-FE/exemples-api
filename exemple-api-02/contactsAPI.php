@@ -68,89 +68,94 @@ $method = $_SERVER["REQUEST_METHOD"];
 $jsonBody = file_get_contents("php://input");
 $body = json_decode($jsonBody, true); // Convertit le JSON en tableau PHP (associatif ou non)
 
-switch ($method) {
-    case "GET":
-        if ($contactId) {
-            $contact = $model->get($contactId);
-            if ($contact) {
-                sendResponse(200, $contact);
+try {
+    switch ($method) {
+        case "GET":
+            if ($contactId) {
+                $contact = $model->get($contactId);
+                if ($contact) {
+                    sendResponse(200, $contact);
+                } else {
+                    // Le contact n'existe pas
+                    sendResponse(404);
+                }
             } else {
-                // Le contact n'existe pas
+                $contacts = $model->getAll();
+                sendResponse(200, $contacts);
+            }
+            break;
+        case "POST":
+            if ($contactId) {
+                sendResponse(404); // On ne veut pas d'ID avec POST (création)
+            }
+
+            if (
+                !isset($body["first_name"]) ||
+                !isset($body["last_name"]) ||
+                !isset($body["phone_numbers"]) ||
+                !is_array($body["phone_numbers"]) ||
+                !isset($body["addresses"]) ||
+                !is_array($body["addresses"]) ||
+                !isset($body["email_addresses"]) ||
+                !is_array($body["email_addresses"])
+            ) {
+                sendResponse(400);
+            }
+
+            $model->insert(
+                $body["first_name"],
+                $body["last_name"],
+                $body["phone_numbers"],
+                $body["addresses"],
+                $body["email_addresses"]
+            );
+            break;
+        case "PUT":
+            if (!$contactId) {
+                // On veut absolument un ID avec un PUT (mise à jour)
                 sendResponse(404);
             }
-        } else {
-            $contacts = $model->getAll();
-            sendResponse(200, $contacts);
-        }
-        break;
-    case "POST":
-        if ($contactId) {
-            sendResponse(404); // On ne veut pas d'ID avec POST (création)
-        }
 
-        if (
-            !isset($body["first_name"]) ||
-            !isset($body["last_name"]) ||
-            !isset($body["phone_numbers"]) ||
-            !is_array($body["phone_numbers"]) ||
-            !isset($body["addresses"]) ||
-            !is_array($body["addresses"]) ||
-            !isset($body["email_addresses"]) ||
-            !is_array($body["email_addresses"])
-        ) {
-            sendResponse(400);
-        }
+            if (
+                !isset($body["first_name"]) ||
+                !isset($body["last_name"]) ||
+                !isset($body["phone_numbers"]) ||
+                !is_array($body["phone_numbers"]) ||
+                !isset($body["addresses"]) ||
+                !is_array($body["addresses"]) ||
+                !isset($body["email_addresses"]) ||
+                !isset($body["email_addresses"])
+            ) {
+                sendResponse(400);
+            }
 
-        $model->insert(
-            $body["first_name"],
-            $body["last_name"],
-            $body["phone_numbers"],
-            $body["addresses"],
-            $body["email_addresses"]
-        );
-        break;
-    case "PUT":
-        if (!$contactId) {
-            // On veut absolument un ID avec un PUT (mise à jour)
+            $contact = $model->get($contactId);
+            if (!$contact) {
+                sendResponse(404);
+            }
+
+            $model->update(
+                $contactId,
+                $body["first_name"],
+                $body["last_name"],
+                $body["phone_numbers"],
+                $body["addresses"],
+                $body["email_addresses"]
+            );
+            break;
+        case "DELETE":
+            if (!$contactId) {
+                // On veut absolument un ID avec un DELETE
+                sendResponse(404);
+            }
+            $model->delete($contactId);
+            break;
+        default:
             sendResponse(404);
-        }
-
-        if (
-            !isset($body["first_name"]) ||
-            !isset($body["last_name"]) ||
-            !isset($body["phone_numbers"]) ||
-            !is_array($body["phone_numbers"]) ||
-            !isset($body["addresses"]) ||
-            !is_array($body["addresses"]) ||
-            !isset($body["email_addresses"]) ||
-            !isset($body["email_addresses"])
-        ) {
-            sendResponse(400);
-        }
-
-        $contact = $model->get($contactId);
-        if (!$contact) {
-            sendResponse(404);
-        }
-
-        $model->update(
-            $contactId,
-            $body["first_name"],
-            $body["last_name"],
-            $body["phone_numbers"],
-            $body["addresses"],
-            $body["email_addresses"]
-        );
-        break;
-    case "DELETE":
-        if (!$contactId) {
-            // On veut absolument un ID avec un DELETE
-            sendResponse(404);
-        }
-        $model->delete($contactId);
-        break;
-    default:
-        sendResponse(404);
+    }
+} catch (Exception $e) {
+    // En cas d'exception, on retourne une erreur 500 (Internal Server Error).
+    sendResponse(500);
 }
 
 ?>
